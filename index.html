@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d17" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Nebula Protocol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,6 +69,17 @@
         color: #e2e8f0;
         overflow: hidden; /* Prevent scrolling during game */
         font-family: 'Rubik', sans-serif;
+        /* Mobile Safe Area handling */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        width: 100vw;
+        height: 100vh;
+        touch-action: none; /* Disable double-tap zoom */
+        -webkit-user-select: none; /* Disable text selection */
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
       }
       .font-game {
         font-family: 'Fredoka One', cursive;
@@ -138,7 +152,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
+  <body oncontextmenu="return false;">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

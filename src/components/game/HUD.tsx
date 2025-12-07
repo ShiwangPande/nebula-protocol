@@ -27,10 +27,10 @@ const ActionButton: React.FC<ActionButtonProps> = ({ icon: Icon, label, onClick,
             onClick={onClick} 
             onTouchStart={(e) => { e.stopPropagation(); if(!disabled && cooldown <= 0) onClick(); }} // Better touch response
             disabled={disabled || cooldown > 0} 
-            className={`group relative w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-black ${color} flex flex-col items-center justify-center shadow-xl active:scale-95 transition-transform overflow-hidden ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''} ${className}`}
+            className={`group relative w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-black ${color} flex flex-col items-center justify-center shadow-xl active:scale-95 transition-transform overflow-hidden ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''} ${className}`}
         >
-            <Icon size={24} className={`${textColor} group-hover:scale-110 transition-transform z-10 md:w-7 md:h-7 ${cooldown > 0 ? 'opacity-50' : ''}`}/>
-            <span className={`text-[9px] md:text-[10px] font-bold ${textColor} z-10 mt-1 ${cooldown > 0 ? 'opacity-50' : ''}`}>{label}</span>
+            <Icon size={20} className={`${textColor} group-hover:scale-110 transition-transform z-10 md:w-7 md:h-7 ${cooldown > 0 ? 'opacity-50' : ''}`}/>
+            <span className={`text-[8px] md:text-[10px] font-bold ${textColor} z-10 mt-0.5 md:mt-1 ${cooldown > 0 ? 'opacity-50' : ''}`}>{label}</span>
 
             {/* Cooldown Overlay */}
             {cooldown > 0 && (
@@ -44,7 +44,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({ icon: Icon, label, onClick,
                     />
                     
                     {/* Text Countdown */}
-                    <div className="absolute inset-0 z-30 flex items-center justify-center text-white font-mono font-bold text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">
+                    <div className="absolute inset-0 z-30 flex items-center justify-center text-white font-mono font-bold text-lg md:text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">
                         {Math.ceil(cooldown)}
                     </div>
                 </>
@@ -127,7 +127,7 @@ const Joystick = ({ onMove }: { onMove: (x: number, y: number) => void }) => {
     return (
         <div 
             ref={containerRef}
-            className={`absolute bottom-6 left-6 w-48 h-48 rounded-full pointer-events-auto touch-none flex items-center justify-center transition-opacity duration-200 z-50 ${active ? 'opacity-90' : 'opacity-50 hover:opacity-70'}`}
+            className={`absolute bottom-6 left-6 w-40 h-40 md:w-48 md:h-48 rounded-full pointer-events-auto touch-none flex items-center justify-center transition-opacity duration-200 z-50 ${active ? 'opacity-90' : 'opacity-40 hover:opacity-60'}`}
             onTouchStart={onStart}
             style={{ touchAction: 'none' }}
         >
@@ -139,13 +139,13 @@ const Joystick = ({ onMove }: { onMove: (x: number, y: number) => void }) => {
             
              {/* Stick */}
             <div 
-                className="absolute w-20 h-20 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)] transition-transform duration-75 ease-linear flex items-center justify-center pointer-events-none"
+                className="absolute w-16 h-16 md:w-20 md:h-20 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)] transition-transform duration-75 ease-linear flex items-center justify-center pointer-events-none"
                 style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
             >
                 {/* Stick Gradient */}
                 <div className="w-full h-full rounded-full bg-gradient-to-t from-gray-400 to-white border border-gray-300" />
                 {/* Thumb Grip */}
-                <div className="absolute w-14 h-14 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 border border-gray-300 opacity-80" />
+                <div className="absolute w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 border border-gray-300 opacity-80" />
             </div>
         </div>
     );
@@ -173,11 +173,11 @@ const MiniMap = ({ mapObjects, playerPos, theme, isExpanded, onToggle, tasks, sa
             className={`fixed transition-all duration-300 bg-space-900 border-4 border-gray-600 shadow-2xl overflow-hidden z-[100] group ${
                 (isExpanded || sabotageMode) 
                 ? 'inset-4 md:inset-12 w-auto h-auto rounded-xl bg-black/90 cursor-default' 
-                : 'top-4 right-4 w-32 h-32 md:w-48 md:h-48 rounded-full hover:border-neon-cyan cursor-pointer'
+                : 'top-2 right-2 w-28 h-28 md:w-48 md:h-48 rounded-full hover:border-neon-cyan cursor-pointer'
             }`}
         >
             {!sabotageMode && <div className="absolute top-2 right-2 text-white/50 z-20">
-                 {isExpanded ? <Minimize2 size={24}/> : <MapIcon size={20}/>}
+                 {isExpanded ? <Minimize2 size={24}/> : <MapIcon size={16} className="md:w-5 md:h-5"/>}
             </div>}
             
             {sabotageMode && <div className="absolute top-4 left-4 z-50 text-white font-game text-xl md:text-2xl">SABOTAGE SYSTEMS {cooldown > 0 && <span className="text-red-500">({Math.ceil(cooldown)}s)</span>}</div>}
@@ -288,28 +288,28 @@ export const HUD = ({ state, player, onInteract, onAction, onToggleSabotageMap, 
     };
 
     return (
-        <div className="absolute inset-0 pointer-events-none z-40 p-4 flex flex-col justify-between select-none">
+        <div className="absolute inset-0 pointer-events-none z-40 p-2 md:p-4 flex flex-col justify-between select-none">
             {/* Top Bar */}
             <div className="pointer-events-auto flex justify-between items-start">
                 {/* Task Bar */}
                 {(!state.systems.comms.active && !isImpostor) ? (
-                    <div className="bg-red-900/80 border-2 border-red-500 p-4 rounded-xl shadow-lg w-48 md:w-64 animate-pulse">
-                        <div className="text-white font-game text-md md:text-xl flex items-center gap-2"><Radio className="animate-spin"/> COMMS DOWN</div>
+                    <div className="bg-red-900/80 border-2 border-red-500 p-3 md:p-4 rounded-xl shadow-lg w-40 md:w-64 animate-pulse">
+                        <div className="text-white font-game text-sm md:text-xl flex items-center gap-2"><Radio className="animate-spin" size={16}/> COMMS DOWN</div>
                     </div>
                 ) : (
-                    <div className="bg-black/60 backdrop-blur-md border-2 border-gray-600 p-3 rounded-xl shadow-lg w-48 md:w-64">
-                        <div className="flex justify-between text-xs text-white font-bold mb-1">
+                    <div className="bg-black/60 backdrop-blur-md border-2 border-gray-600 p-2 md:p-3 rounded-xl shadow-lg w-40 md:w-64">
+                        <div className="flex justify-between text-[10px] md:text-xs text-white font-bold mb-1">
                             <span>TOTAL TASKS</span>
                             <span className="text-neon-green">ACTIVE</span>
                         </div>
-                        <div className="w-full h-3 bg-black rounded-full overflow-hidden border border-gray-700 mb-2">
+                        <div className="w-full h-2 md:h-3 bg-black rounded-full overflow-hidden border border-gray-700 mb-2">
                             <div className="h-full bg-gradient-to-r from-green-400 to-emerald-600 w-[25%] shadow-[0_0_10px_#4ade80]"></div>
                         </div>
-                        <div className="text-white text-[10px] space-y-1 font-mono max-h-24 overflow-y-auto">
+                        <div className="text-white text-[9px] md:text-[10px] space-y-0.5 md:space-y-1 font-mono max-h-20 md:max-h-24 overflow-y-auto">
                             {player.tasks.map(t => (
-                                <div key={t.id} className={`flex items-center gap-2 ${t.completed ? 'text-green-500 line-through opacity-50' : 'text-gray-200'}`}>
-                                    <div className={`w-2 h-2 rounded-full ${t.completed ? 'bg-green-500' : 'bg-yellow-400 animate-pulse'}`}/>
-                                    {state.modRegistry.tasks[t.taskId].name}
+                                <div key={t.id} className={`flex items-center gap-1.5 md:gap-2 ${t.completed ? 'text-green-500 line-through opacity-50' : 'text-gray-200'}`}>
+                                    <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${t.completed ? 'bg-green-500' : 'bg-yellow-400 animate-pulse'}`}/>
+                                    <span className="truncate">{state.modRegistry.tasks[t.taskId].name}</span>
                                 </div>
                             ))}
                         </div>
@@ -333,14 +333,14 @@ export const HUD = ({ state, player, onInteract, onAction, onToggleSabotageMap, 
             </div>
 
             {state.activeSabotage && (
-                <div className="absolute top-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-auto w-full px-4 text-center">
-                    <div className="bg-red-600/90 text-white px-4 md:px-8 py-3 rounded-full animate-pulse font-game text-sm md:text-xl border-4 border-red-900 flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(220,38,38,0.6)]">
-                        <Siren className="animate-spin" /> 
+                <div className="absolute top-20 md:top-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 md:gap-2 pointer-events-auto w-full px-4 text-center">
+                    <div className="bg-red-600/90 text-white px-4 md:px-8 py-2 md:py-3 rounded-full animate-pulse font-game text-xs md:text-xl border-4 border-red-900 flex items-center justify-center gap-2 md:gap-3 shadow-[0_0_30px_rgba(220,38,38,0.6)]">
+                        <Siren className="animate-spin" size={16}/> 
                         {state.activeSabotage} FAILURE 
                         {state.systems.reactor.meltdownTimer && ` (${Math.ceil(state.systems.reactor.meltdownTimer)}s)`}
                         {state.systems.oxygen.depletionTimer && ` (${Math.ceil(state.systems.oxygen.depletionTimer)}s)`}
                     </div>
-                    <div className="text-red-500 font-bold animate-bounce text-xl md:text-2xl drop-shadow-md">
+                    <div className="text-red-500 font-bold animate-bounce text-sm md:text-2xl drop-shadow-md">
                         ↓ REPAIR STATIONS ACTIVE
                     </div>
                 </div>
@@ -349,7 +349,7 @@ export const HUD = ({ state, player, onInteract, onAction, onToggleSabotageMap, 
             <div className="flex-1 relative">
                 {onJoystickMove && <Joystick onMove={onJoystickMove} />}
                 
-                <div className="absolute bottom-4 right-4 pointer-events-auto flex flex-col items-end gap-2 md:flex-row md:items-end md:gap-4">
+                <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 pointer-events-auto flex flex-col items-end gap-2 md:flex-row md:items-end md:gap-4">
                    {role.abilityName && (
                        <ActionButton icon={Zap} label={role.abilityName} color="bg-purple-600" textColor="text-white" onClick={() => onAction('ABILITY')} />
                    )}
