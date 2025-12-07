@@ -201,32 +201,34 @@ export interface GameState {
 }
 
 export type GameAction =
-  | { type: 'SET_LOBBY_MODE'; payload: LobbyMode }
-  | { type: 'CREATE_LOBBY'; payload: { name: string; settings: Partial<GameSettings>; playerName: string; color: string; hatId?: string; skinId?: string } }
-  | { type: 'JOIN_LOBBY'; payload: { code: string; playerName: string; color: string; hatId?: string; skinId?: string } }
-  | { type: 'UPDATE_SETTINGS'; payload: Partial<GameSettings> }
-  | { type: 'UPDATE_COSMETICS'; payload: { payload: { playerId: string; color?: string; hatId?: string; skinId?: string } } | { playerId: string; color?: string; hatId?: string; skinId?: string } }
-  | { type: 'SET_READY'; payload: { playerId: string; isReady: boolean } }
-  | { type: 'KICK_PLAYER'; payload: { targetId: string } }
-  | { type: 'START_GAME' }
-  | { type: 'RETURN_TO_LOBBY' }
-  | { type: 'MOVE_PLAYER'; payload: { id: string; position: Vector2; direction: 'left' | 'right'; isMoving: boolean } }
-  | { type: 'KILL_PLAYER'; payload: { killerId: string; targetId: string } }
-  | { type: 'REPORT_BODY'; payload: { reporterId: string; bodyId: string } }
-  | { type: 'CALL_EMERGENCY_MEETING'; payload: { playerId: string } }
-  | { type: 'VOTE'; payload: { voterId: string; targetId: string | 'skip' } }
-  | { type: 'END_MEETING'; payload: { ejectedId: string | null } }
-  | { type: 'LOAD_MOD'; payload: ModPackage }
-  | { type: 'COMPLETE_TASK'; payload: { playerId: string; taskInstanceId: string } }
-  | { type: 'OPEN_TASK'; payload: { taskInstanceId: string } }
-  | { type: 'CLOSE_TASK' }
-  | { type: 'TOGGLE_DOOR'; payload: { doorId: string } }
-  | { type: 'SABOTAGE_DOORS'; payload: { doorIds: string[] } }
-  | { type: 'ENTER_VENT'; payload: { playerId: string; ventId: string } }
-  | { type: 'EXIT_VENT'; payload: { playerId: string } }
-  | { type: 'TRIGGER_SABOTAGE'; payload: { type: SabotageType } }
-  | { type: 'FIX_SABOTAGE'; payload: { type: SabotageType; stationId?: string } }
-  | { type: 'USE_ABILITY'; payload: { playerId: string } } 
-  | { type: 'SET_MAP'; payload: { mapId: string } }
-  | { type: 'SEND_CHAT'; payload: { text: string } }
-  | { type: 'TICK'; payload: { dt: number } };
+  | { type: 'SET_LOBBY_MODE'; payload: LobbyMode; isRemote?: boolean }
+  | { type: 'CREATE_LOBBY'; payload: { name: string; settings: Partial<GameSettings>; playerName: string; color: string; hatId: string; skinId: string }; isRemote?: boolean }
+  | { type: 'JOIN_LOBBY'; payload: { code: string; playerId: string; playerName: string; color: string; hatId: string; skinId: string }; isRemote?: boolean }
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<GameSettings>; isRemote?: boolean }
+  | { type: 'UPDATE_COSMETICS'; payload: { playerId: string; color?: string; hatId?: string; skinId?: string }; isRemote?: boolean }
+  | { type: 'SET_READY'; payload: { playerId: string; isReady: boolean }; isRemote?: boolean }
+  | { type: 'KICK_PLAYER'; payload: { targetId: string }; isRemote?: boolean }
+  | { type: 'START_GAME'; isRemote?: boolean }
+  | { type: 'RETURN_TO_LOBBY'; isRemote?: boolean }
+  | { type: 'MOVE_PLAYER'; payload: { id: string; position: Vector2; direction: 'left' | 'right'; isMoving: boolean }; isRemote?: boolean }
+  | { type: 'KILL_PLAYER'; payload: { killerId: string; targetId: string }; isRemote?: boolean }
+  | { type: 'REPORT_BODY'; payload: { reporterId: string; bodyId: string }; isRemote?: boolean }
+  | { type: 'CALL_EMERGENCY_MEETING'; payload: { playerId: string }; isRemote?: boolean }
+  | { type: 'VOTE'; payload: { voterId: string; targetId: string | 'skip' }; isRemote?: boolean }
+  | { type: 'END_MEETING'; payload: { ejectedId: string | null }; isRemote?: boolean }
+  | { type: 'LOAD_MOD'; payload: ModPackage; isRemote?: boolean }
+  | { type: 'COMPLETE_TASK'; payload: { playerId: string; taskInstanceId: string }; isRemote?: boolean }
+  | { type: 'OPEN_TASK'; payload: { taskInstanceId: string }; isRemote?: boolean }
+  | { type: 'CLOSE_TASK'; isRemote?: boolean }
+  | { type: 'TOGGLE_DOOR'; payload: { doorId: string }; isRemote?: boolean }
+  | { type: 'SABOTAGE_DOORS'; payload: { doorIds: string[] }; isRemote?: boolean }
+  | { type: 'ENTER_VENT'; payload: { playerId: string; ventId: string }; isRemote?: boolean }
+  | { type: 'EXIT_VENT'; payload: { playerId: string }; isRemote?: boolean }
+  | { type: 'TRIGGER_SABOTAGE'; payload: { type: SabotageType }; isRemote?: boolean }
+  | { type: 'FIX_SABOTAGE'; payload: { type: SabotageType; stationId?: string }; isRemote?: boolean }
+  | { type: 'USE_ABILITY'; payload: { playerId: string }; isRemote?: boolean } 
+  | { type: 'SET_MAP'; payload: { mapId: string }; isRemote?: boolean }
+  | { type: 'SEND_CHAT'; payload: { text: string }; isRemote?: boolean }
+  | { type: 'TICK'; payload: { dt: number }; isRemote?: boolean }
+  | { type: 'SYNC_STATE'; payload: GameState; isRemote?: boolean }
+  | { type: 'REQUEST_STATE'; isRemote?: boolean };

@@ -6,7 +6,7 @@ import { Character } from '../game/Character';
 import { MAP_REGISTRY } from '../../data/mapRegistry';
 import { HUD } from '../game/HUD';
 import { TaskModal } from '../game/TaskModal';
-import { Wrench, Zap, Database, Droplet, Activity, Lock, FlaskConical, Globe, ScanLine, Radio, TriangleAlert, Cpu, Wind, Flame, Siren, ArrowBigUp } from 'lucide-react';
+import { Wrench, Zap, Database, Droplet, Activity, Lock, FlaskConical, Globe, ScanLine, Radio, TriangleAlert, Cpu, Wind, Flame, Siren, ArrowBigUp, CheckCircle, Sparkles } from 'lucide-react';
 
 const INTERACT_RANGE = 90;
 
@@ -489,6 +489,9 @@ export const GameScreen: React.FC<{ state: GameState; dispatch: React.Dispatch<G
     const [activeStationId, setActiveStationId] = useState<string | null>(null);
     const [emergencyCalled, setEmergencyCalled] = useState(false);
     
+    // Joystick Input
+    const joystickRef = useRef<{x: number, y: number}>({x: 0, y: 0});
+    
     // Sound Loop Managers
     const alarmRef = useRef<SoundLoop | null>(null);
     const staticRef = useRef<SoundLoop | null>(null);
@@ -510,9 +513,23 @@ export const GameScreen: React.FC<{ state: GameState; dispatch: React.Dispatch<G
         if (!myPlayer || myPlayer.isDead || state.activeTask || activeRepair || myPlayer.isInVent) return; 
         const interval = setInterval(() => {
             let dx = 0, dy = 0;
+            // Keyboard
             if (keys['w'] || keys['arrowup']) dy -= 1; if (keys['s'] || keys['arrowdown']) dy += 1;
             if (keys['a'] || keys['arrowleft']) dx -= 1; if (keys['d'] || keys['arrowright']) dx += 1;
-            if (dx !== 0 && dy !== 0) { const len = Math.sqrt(dx*dx + dy*dy); dx /= len; dy /= len; }
+            
+            // Joystick
+            if (joystickRef.current.x !== 0 || joystickRef.current.y !== 0) {
+                dx = joystickRef.current.x;
+                dy = joystickRef.current.y;
+            }
+
+            if (dx !== 0 && dy !== 0) { 
+                const len = Math.sqrt(dx*dx + dy*dy); 
+                // Normalize only if > 1 (clamp joystick)
+                if (len > 1) {
+                    dx /= len; dy /= len; 
+                }
+            }
 
             const isMoving = dx !== 0 || dy !== 0;
             if (isMoving) {
@@ -645,7 +662,7 @@ export const GameScreen: React.FC<{ state: GameState; dispatch: React.Dispatch<G
     const handleTaskCompletion = () => {
         if (state.activeTask) {
              dispatch({ type: 'COMPLETE_TASK', payload: { playerId: myPlayer.id, taskInstanceId: state.activeTask } });
-             playSuccessSound(); setSuccessFlash(true); setTimeout(() => setSuccessFlash(false), 500);
+             playSuccessSound(); setSuccessFlash(true); setTimeout(() => setSuccessFlash(false), 2000);
         }
         if (activeRepair) {
             if (activeRepair === 'fix_lights') dispatch({ type: 'FIX_SABOTAGE', payload: { type: 'LIGHTS', stationId: activeStationId || undefined }});
@@ -662,12 +679,45 @@ export const GameScreen: React.FC<{ state: GameState; dispatch: React.Dispatch<G
 
     return (
         <div className={`w-full h-full relative overflow-hidden bg-black ${state.activeSabotage === 'REACTOR' || state.activeSabotage === 'OXYGEN' ? 'animate-screen-shake' : ''}`}>
-            <HUD state={state} player={myPlayer} onInteract={handleInteract} onAction={handleAction} onToggleSabotageMap={() => setShowSabotageMap(!showSabotageMap)} showSabotageMap={showSabotageMap} dispatch={dispatch} canReport={canReport} />
+            <HUD 
+                state={state} 
+                player={myPlayer} 
+                onInteract={handleInteract} 
+                onAction={handleAction} 
+                onToggleSabotageMap={() => setShowSabotageMap(!showSabotageMap)} 
+                showSabotageMap={showSabotageMap} 
+                dispatch={dispatch} 
+                canReport={canReport}
+                onJoystickMove={(x, y) => joystickRef.current = { x, y }}
+            />
             
             {(state.activeTask && activeTaskDef) && <TaskModal taskId={state.activeTask} taskType={activeTaskDef.id} onClose={() => dispatch({ type: 'CLOSE_TASK' })} onComplete={handleTaskCompletion} />}
             {activeRepair && <TaskModal taskId="repair" taskType={activeRepair} onClose={() => { setActiveRepair(null); setActiveStationId(null); }} onComplete={handleTaskCompletion} />}
 
             <div className={`fixed inset-0 bg-white z-[60] pointer-events-none transition-opacity duration-500 ease-out mix-blend-overlay ${successFlash ? 'opacity-40' : 'opacity-0'}`} />
+
+            {/* Task Complete Banner */}
+            {successFlash && (
+                <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top fade-in duration-300 pointer-events-none">
+                     <div className="bg-green-600 text-white px-12 py-4 rounded-xl shadow-[0_0_50px_rgba(34,197,94,0.6)] border-4 border-white flex items-center gap-4 relative overflow-hidden">
+                         <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                         <CheckCircle size={48} className="animate-bounce" />
+                         <span className="text-4xl font-game tracking-widest drop-shadow-md">TASK COMPLETE</span>
+                         <Sparkles className="text-yellow-300 absolute -top-4 -right-4 animate-spin-slow" size={64}/>
+                     </div>
+                     {/* Confetti Particles */}
+                     <div className="absolute inset-0 flex items-center justify-center">
+                        {[...Array(10)].map((_, i) => (
+                             <div key={i} className="absolute w-2 h-2 bg-white rounded-full animate-ping" style={{
+                                 top: `${Math.random() * 100}%`,
+                                 left: `${Math.random() * 100}%`,
+                                 animationDelay: `${Math.random() * 0.5}s`,
+                                 animationDuration: '0.8s'
+                             }}/>
+                        ))}
+                     </div>
+                </div>
+            )}
 
             {/* Emergency Meeting Animation Overlay */}
             {emergencyCalled && (

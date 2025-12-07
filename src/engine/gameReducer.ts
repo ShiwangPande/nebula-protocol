@@ -1,5 +1,5 @@
 
-import { GameState, GameAction, Player, GamePhase, Team, GameSettings } from '../types';
+import { GameState, GameAction, Player, GamePhase, Team, GameSettings, LobbyMode } from '../types';
 import { BASE_ROLES, BASE_TASKS, INITIAL_SETTINGS, COLORS } from '../data/constants';
 import { MAP_REGISTRY, DEFAULT_MAP_ID } from '../data/mapRegistry';
 
@@ -22,6 +22,21 @@ const createPlayer = (id: string, name: string, color: string, isHost: boolean, 
 });
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
+  // Handle Syncing
+  if (action.type === 'SYNC_STATE') {
+      // If we are already in a game, ignore, unless we are in MENU or JOINING phase
+      if (state.lobbyMode === 'MAIN_MENU' || state.lobbyMode === 'JOIN_CODE' || state.lobbyMode === 'LOBBY') {
+           // Preserve myPlayerId if it exists and is valid, otherwise take from payload if syncing full state (rare)
+           // Actually, SYNC_STATE usually comes from host. If I am client, I want to adopt host state.
+           // But I need to know WHO I am.
+           // Typically client generates ID on JOIN, then host accepts it.
+           // So we keep our myPlayerId.
+           return { ...action.payload, myPlayerId: state.myPlayerId };
+      }
+      return state;
+  }
+  if (action.type === 'REQUEST_STATE') return state; // Handled in middleware
+
   switch (action.type) {
     case 'SET_LOBBY_MODE':
         return { ...state, lobbyMode: action.payload };
@@ -47,32 +62,45 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         };
     
     case 'JOIN_LOBBY':
-         const newId = `p_${state.players.length + 1}`;
+         // Validation: Check code if we are host or already have code
+         if (state.lobbyCode && state.lobbyCode !== action.payload.code) {
+             console.error("Invalid Lobby Code");
+             return state; 
+         }
+         
+         const newId = action.payload.playerId;
          const joiner = createPlayer(newId, action.payload.playerName, action.payload.color, false, action.payload.hatId, action.payload.skinId);
-         const jMap = MAP_REGISTRY[state.activeMapId];
+         const jMap = MAP_REGISTRY[state.activeMapId] || MAP_REGISTRY[DEFAULT_MAP_ID];
          joiner.position = { ...jMap.spawnPoint };
-         return {
+         
+         // Fix: Explicitly type the new state to help TS inference
+         const newState: GameState = {
              ...state,
-             phase: 'LOBBY',
-             lobbyMode: 'LOBBY',
+             phase: 'LOBBY' as GamePhase,
+             lobbyMode: 'LOBBY' as LobbyMode,
              players: [...state.players, joiner],
-             myPlayerId: newId,
              logs: [...state.logs, `${action.payload.playerName} joined.`]
          };
+         
+         // If I am the one who triggered this locally (not remote), I am this player
+         if (!action.isRemote) {
+             return { ...newState, myPlayerId: newId };
+         }
+         return newState;
 
     case 'UPDATE_SETTINGS':
         return { ...state, settings: { ...state.settings, ...action.payload } };
 
     case 'UPDATE_COSMETICS':
-        const cosmeticPayload = 'payload' in action.payload ? action.payload.payload : action.payload;
+        const data = action.payload;
         return {
             ...state,
             players: state.players.map(p => 
-                p.id === cosmeticPayload.playerId 
+                p.id === data.playerId 
                 ? { ...p, 
-                    color: cosmeticPayload.color ?? p.color,
-                    hatId: cosmeticPayload.hatId ?? p.hatId,
-                    skinId: cosmeticPayload.skinId ?? p.skinId 
+                    color: data.color ?? p.color,
+                    hatId: data.hatId ?? p.hatId,
+                    skinId: data.skinId ?? p.skinId 
                   } 
                 : p
             )
@@ -346,12 +374,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
                 : { ...p, isInVent: false, hasVoted: false }
             ),
             logs: [...state.logs, `EMERGENCY MEETING CALLED BY ${caller.name}.`],
-            activeSabotage: null, // Clear non-critical sabotage? Standard is yes, or pause. We'll clear for now.
+            activeSabotage: null,
             systems: {
                 ...state.systems,
                 lights: { active: true, fixed: true },
                 comms: { active: true },
-                // Reactor/Oxygen are blocked so assume they are fine if we got here
                 globalSabotageCooldown: 20
             },
             map: state.map.map(o => o.type === 'door' ? { ...o, isOpen: true, isLocked: false, lockedUntil: 0 } : o)
@@ -374,13 +401,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             reactor: { meltdownTimer: null, fixedCount: 0 },
             oxygen: { depletionTimer: null, fixedCount: 0 },
             comms: { active: true },
-            globalSabotageCooldown: 10 // Short cooldown after meeting
+            globalSabotageCooldown: 10 
         },
         map: state.map.map(o => o.type === 'door' ? { ...o, isOpen: true, isLocked: false, lockedUntil: 0 } : o)
       };
     
     case 'SEND_CHAT':
-        const sender = state.players.find(p => p.id === state.myPlayerId);
+        const sender = state.players.find(p => p.id === state.myPlayerId) || state.players.find(p => p.id === 'p_host');
         if (!sender) return state;
         return {
             ...state,
@@ -429,7 +456,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         votes: {},
         deadBodyReported: null,
         systems: { ...state.systems, globalSabotageCooldown: 20 },
-        emergencyCooldown: 15 // Global cooldown after meeting
+        emergencyCooldown: 15
       };
 
     case 'TOGGLE_DOOR':

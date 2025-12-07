@@ -1,5 +1,5 @@
 
-import React, { useReducer, useEffect, useState } from 'react';
+import React, { useReducer, useEffect, useState, useRef } from 'react';
 import { GameState, GameAction, LobbyMode } from './types';
 import { INITIAL_SETTINGS, BASE_ROLES, BASE_TASKS } from './data/constants';
 import { MAP_REGISTRY, DEFAULT_MAP_ID } from './data/mapRegistry';
@@ -8,7 +8,7 @@ import { LobbyScreen } from './components/screens/LobbyScreen';
 import { GameScreen } from './components/screens/GameScreen';
 import { MeetingScreen } from './components/screens/MeetingScreen';
 import { ModPanel } from './components/screens/ModPanel';
-import { Zap } from 'lucide-react';
+import { Zap, Smartphone, RotateCw } from 'lucide-react';
 
 const initialState: GameState = {
     phase: 'LOBBY',
@@ -41,15 +41,69 @@ const initialState: GameState = {
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const [showMods, setShowMods] = useState(false);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  
+  // Ref to access current state inside callbacks
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // --- MULTIPLAYER SYNC (Simulated via BroadcastChannel) ---
+  useEffect(() => {
+    // Unique channel name ensures cross-tab communication
+    const ch = new BroadcastChannel('nebula_protocol_v1');
+    channelRef.current = ch;
+
+    ch.onmessage = (event) => {
+        const action = event.data;
+        const currentState = stateRef.current; // Use Ref to get latest state
+        
+        if (action.type === 'REQUEST_STATE') {
+            // New tab asked for state, we send ours if we are in a lobby
+            if (currentState.lobbyMode !== 'MAIN_MENU' && currentState.lobbyMode !== 'JOIN_CODE') {
+                ch.postMessage({ type: 'SYNC_STATE', payload: currentState, isRemote: true });
+            }
+        } else if (action.type === 'SYNC_STATE') {
+             // We received state from another tab
+             dispatch(action);
+        } else {
+            // Normal game action
+            dispatch({ ...action, isRemote: true });
+
+            // If a player joined and we are the host, we must sync state back so they get the lobby info
+            if (action.type === 'JOIN_LOBBY' && currentState.myPlayerId === 'p_host') {
+                // Wait slightly for our reducer to process the JOIN_LOBBY locally
+                setTimeout(() => {
+                     // Re-fetch state ref to get the updated player list
+                     if (channelRef.current) {
+                        channelRef.current.postMessage({ type: 'SYNC_STATE', payload: stateRef.current });
+                     }
+                }, 100);
+            }
+        }
+    };
+
+    // When we load, ask if anyone else is playing to get their state
+    ch.postMessage({ type: 'REQUEST_STATE' });
+
+    return () => ch.close();
+  }, []); // Run once on mount
+
+  // Wrapper for dispatch to send to channel
+  const enhancedDispatch = (action: GameAction) => {
+      dispatch(action);
+      if (!action.isRemote && channelRef.current) {
+          channelRef.current.postMessage(action);
+      }
+  };
 
   useEffect(() => {
     if (state.phase !== 'PLAYING') return;
-    const interval = setInterval(() => dispatch({ type: 'TICK', payload: { dt: 50 } }), 50);
+    const interval = setInterval(() => enhancedDispatch({ type: 'TICK', payload: { dt: 50 } }), 50);
     return () => clearInterval(interval);
   }, [state.phase]);
 
   return (
-    <div className="w-full h-screen bg-space-900 text-slate-100 font-ui relative overflow-hidden select-none">
+    <div className="w-full h-screen bg-space-900 text-slate-100 font-ui relative overflow-hidden select-none touch-none">
       <style>{`
         @keyframes shake {
           0% { transform: translate(1px, 1px) rotate(0deg); }
@@ -114,27 +168,47 @@ export default function App() {
         .animate-static {
             animation: staticNoise 0.5s steps(10) infinite;
         }
+        
+        /* Mobile Landscape Enforcement */
+        .landscape-check { display: none; }
+        @media screen and (orientation: portrait) {
+            .landscape-check { display: flex; }
+            .game-root { display: none; }
+        }
       `}</style>
-      {state.phase === 'LOBBY' && <LobbyScreen state={state} dispatch={dispatch} />}
-      {state.phase === 'PLAYING' && <GameScreen state={state} dispatch={dispatch} />}
-      {state.phase === 'MEETING' && <MeetingScreen state={state} dispatch={dispatch} />}
-      {state.phase === 'ENDED' && (
-          <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-50 animate-in fade-in duration-1000">
-              <h1 className="text-6xl font-game text-white mb-8 tracking-widest drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">MISSION TERMINATED</h1>
-              <div className="flex gap-4">
-                  <button onClick={() => dispatch({ type: 'RETURN_TO_LOBBY' })} className="bg-neon-cyan text-black px-8 py-4 font-game rounded text-2xl hover:scale-105 transition-transform border-b-4 border-cyan-700">RETURN TO LOBBY</button>
-                  <button onClick={() => window.location.reload()} className="bg-gray-700 text-white px-8 py-4 font-game rounded text-2xl hover:scale-105 transition-transform border-b-4 border-gray-900">QUIT</button>
-              </div>
+
+      {/* Portrait Warning Overlay */}
+      <div className="landscape-check fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center text-center p-8">
+          <RotateCw size={64} className="text-neon-cyan animate-spin-slow mb-6"/>
+          <h2 className="text-3xl font-game text-white mb-2">ACCESS DENIED</h2>
+          <p className="text-gray-400">Security protocol requires landscape orientation.</p>
+          <div className="mt-8 flex items-center gap-2 text-neon-yellow animate-pulse">
+              <Smartphone size={24}/> <span>PLEASE ROTATE DEVICE</span>
           </div>
-      )}
+      </div>
 
-      {state.phase === 'LOBBY' && state.lobbyMode === 'LOBBY' && (
-        <button onClick={() => setShowMods(true)} className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 bg-game-panel rounded border-2 border-black font-bold hover:bg-gray-700">
-            <Zap size={16} className="text-neon-yellow" /> MODS
-        </button>
-      )}
+      <div className="game-root w-full h-full">
+          {state.phase === 'LOBBY' && <LobbyScreen state={state} dispatch={enhancedDispatch} />}
+          {state.phase === 'PLAYING' && <GameScreen state={state} dispatch={enhancedDispatch} />}
+          {state.phase === 'MEETING' && <MeetingScreen state={state} dispatch={enhancedDispatch} />}
+          {state.phase === 'ENDED' && (
+              <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-50 animate-in fade-in duration-1000">
+                  <h1 className="text-6xl font-game text-white mb-8 tracking-widest drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">MISSION TERMINATED</h1>
+                  <div className="flex gap-4">
+                      <button onClick={() => enhancedDispatch({ type: 'RETURN_TO_LOBBY' })} className="bg-neon-cyan text-black px-8 py-4 font-game rounded text-2xl hover:scale-105 transition-transform border-b-4 border-cyan-700">RETURN TO LOBBY</button>
+                      <button onClick={() => window.location.reload()} className="bg-gray-700 text-white px-8 py-4 font-game rounded text-2xl hover:scale-105 transition-transform border-b-4 border-gray-900">QUIT</button>
+                  </div>
+              </div>
+          )}
 
-      {showMods && <ModPanel registry={state.modRegistry} onClose={() => setShowMods(false)} onLoadMod={(m) => { dispatch({ type: 'LOAD_MOD', payload: m }); setShowMods(false); }} />}
+          {state.phase === 'LOBBY' && state.lobbyMode === 'LOBBY' && (
+            <button onClick={() => setShowMods(true)} className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 bg-game-panel rounded border-2 border-black font-bold hover:bg-gray-700">
+                <Zap size={16} className="text-neon-yellow" /> MODS
+            </button>
+          )}
+
+          {showMods && <ModPanel registry={state.modRegistry} onClose={() => setShowMods(false)} onLoadMod={(m) => { enhancedDispatch({ type: 'LOAD_MOD', payload: m }); setShowMods(false); }} />}
+      </div>
     </div>
   );
 }
