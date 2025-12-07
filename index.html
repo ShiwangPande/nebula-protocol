@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nebula Protocol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              'game': ['"Fredoka One"', 'cursive'],
+              'ui': ['"Rubik"', 'sans-serif'],
+              mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+            },
+            colors: {
+              space: {
+                900: '#0b0d17',
+                800: '#15192b',
+                700: '#1e233b',
+              },
+              neon: {
+                cyan: '#00f2ff',
+                pink: '#ff0055',
+                green: '#00ff9d',
+                yellow: '#ffd000'
+              },
+              game: {
+                panel: '#434B5D',
+                dark: '#21262D',
+                red: '#C51111',
+                blue: '#132ED1',
+              }
+            },
+            animation: {
+              'bounce-slight': 'bounce-slight 1s infinite',
+              'walk': 'walk 0.4s infinite alternate',
+              'celebrate': 'celebrate 0.5s ease-in-out',
+            },
+            keyframes: {
+              'bounce-slight': {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-2px)' },
+              },
+              'walk': {
+                '0%': { transform: 'rotate(-2deg)' },
+                '100%': { transform: 'rotate(2deg)' },
+              },
+              'celebrate': {
+                '0%': { transform: 'scale(1) rotate(0deg)' },
+                '50%': { transform: 'scale(1.2) rotate(180deg) translateY(-10px)' },
+                '100%': { transform: 'scale(1) rotate(360deg)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #0b0d17;
+        color: #e2e8f0;
+        overflow: hidden; /* Prevent scrolling during game */
+        font-family: 'Rubik', sans-serif;
+      }
+      .font-game {
+        font-family: 'Fredoka One', cursive;
+      }
+      .scan-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, transparent 50%, rgba(0, 242, 255, 0.02) 51%);
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 50;
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #15192b; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e233b; 
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #334155; 
+      }
+      
+      /* Character Styles */
+      .character-body {
+        border: 2px solid black;
+      }
+      .character-visor {
+        background: #71D5E4;
+        border: 2px solid black;
+        box-shadow: inset -2px -2px 0px rgba(0,0,0,0.2);
+      }
+      .character-backpack {
+        border: 2px solid black;
+      }
+      
+      /* Grid Pattern for Map */
+      .bg-grid-pattern {
+        background-image: 
+          linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 50px 50px;
+      }
+      
+      /* Game UI Button */
+      .game-btn {
+        transition: transform 0.1s;
+      }
+      .game-btn:active {
+        transform: scale(0.95);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
